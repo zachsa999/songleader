@@ -1,15 +1,17 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { enhance } from '$app/forms';
 
 	let url = ``;
 
 	onMount(() => (url = window.location.href));
-	let name1 = '';
-	let name2 = '';
-	let name3 = '';
-	let name4 = '';
-	let date = new Date('January 30, 2023');
+	let name1 = 'First';
+	let name2 = 'Second';
+	let name3 = 'Third';
+	let name4 = 'Fourth';
+	let date = '';
 	let frequency = 7;
+	let recurrence = 52;
 
 	function download(filename: string, text: string) {
 		var element = document.createElement('a');
@@ -61,6 +63,8 @@
 		return leaders;
 	}
 
+	// https://svelte.dev/repl/e49e784919294e038df7f961c29abca1?version=3.18.2
+
 	function shuffle(array: any) {
 		let currentIndex = array.length,
 			randomIndex;
@@ -87,15 +91,14 @@
 
 		let i = 0;
 
-		while (i < 52) {
+		while (i < recurrence) {
 			leaders.forEach((leader) => {
-				if (i < 52) {
+				if (i < recurrence) {
 					const randTwo = Math.floor(Math.random() * 2);
 					i = i + 1;
-					console.log(leader[randTwo]);
-					(output =
-						output + `${leader[randTwo]},${first.toLocaleDateString('en-US')},10:00 AM,true\n`),
-						first.setDate(first.getDate() + 1);
+					output =
+						output + `${leader[randTwo]},${first.toLocaleDateString('en-US')},10:00 AM,true\n`;
+					first.setDate(first.getDate() + frequency);
 					leader.used = leader.used + 1;
 				}
 			});
@@ -115,7 +118,7 @@
 </script>
 
 <h1>Welcome</h1>
-<form>
+<form use:enhance>
 	<h3>Please Enter 4 Names to generate a calender file</h3>
 	<input type="text" name="name1" bind:value={name1} placeholder="Person" required />
 	<input type="text" name="name2" bind:value={name2} placeholder="Person" required />
@@ -125,6 +128,8 @@
 	<input type="date" name="date" bind:value={date} required />
 	<h3>Please Select a Frequency (# of days )</h3>
 	<input type="number" name="frequency" bind:value={frequency} required />
+	<h3>Please enter a recurrence</h3>
+	<input type="number" name="recurrence" bind:value={recurrence} required />
 	<div><button on:click={() => newSave()} type="submit">Submit</button></div>
 </form>
 
