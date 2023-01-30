@@ -82,7 +82,7 @@
 		let leaders = leaderArr(name1, name2, name3, name4);
 		shuffle(leaders);
 
-		let first = date;
+		let first = new Date(date);
 		let output = 'Subject,Start Date,Start Time,All Day Event\n';
 
 		let i = 0;
@@ -112,12 +112,10 @@
 
 		download('out.csv', output);
 	}
-
-	// download('test.txt', 'test');
 </script>
 
 <h1>Welcome</h1>
-<form method="POST">
+<form>
 	<h3>Please Enter 4 Names to generate a calender file</h3>
 	<input type="text" name="name1" bind:value={name1} placeholder="Person" required />
 	<input type="text" name="name2" bind:value={name2} placeholder="Person" required />
@@ -129,3 +127,13 @@
 	<input type="number" name="frequency" bind:value={frequency} required />
 	<div><button on:click={() => newSave()} type="submit">Submit</button></div>
 </form>
+
+<h1>Instructions</h1>
+<p>Open the file and verify the dates are correct</p>
+<p>Navigate to google Calender</p>
+<p>Click the gear icon in the top right</p>
+<p>Click Settings</p>
+<p>Click Import and Export on the left</p>
+<p>Upload the file</p>
+<h4>Ensure you have the correct calender selected in the dropdown</h4>
+<p>Click Import</p>
