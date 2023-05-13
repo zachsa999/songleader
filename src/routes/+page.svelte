@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { enhance } from '$app/forms';
 
 	let url = ``;
 
@@ -63,8 +62,6 @@
 		return leaders;
 	}
 
-	// https://svelte.dev/repl/e49e784919294e038df7f961c29abca1?version=3.18.2
-
 	function shuffle(array: any) {
 		let currentIndex = array.length,
 			randomIndex;
@@ -82,55 +79,116 @@
 		return array;
 	}
 
-	function newSave() {
-		let leaders = leaderArr(name1, name2, name3, name4);
-		shuffle(leaders);
-
-		let first = new Date(date);
-		let output = 'Subject,Start Date,Start Time,All Day Event\n';
-
-		let i = 0;
-
-		while (i < recurrence) {
-			leaders.forEach((leader) => {
-				if (i < recurrence) {
-					const randTwo = Math.floor(Math.random() * 2);
-					i = i + 1;
-					output =
-						output + `${leader[randTwo]},${first.toLocaleDateString('en-US')},10:00 AM,true\n`;
-					first.setDate(first.getDate() + frequency);
-					leader.used = leader.used + 1;
-				}
-			});
-			shuffle(leaders);
+	function getCombinationsOfSongleaders(songleaders: [any, any, any, any]): any[][] {
+		let result: any[][] = [];
+		function helper(
+			arr: [any, any, any, any],
+			data: any[],
+			start: number,
+			end: number,
+			index: number
+		) {
+			if (index === 2) {
+				result.push([...data]);
+				result.push([data[1], data[0]]); // Add inverted combination
+				return;
+			}
+			for (let i = start; i <= end && end - i + 1 >= 2 - index; i++) {
+				data[index] = arr[i];
+				helper(arr, data, i + 1, end, index + 1);
+			}
 		}
-		(output =
-			output +
-			`Visit ${url} to create next years schedule,${first.toLocaleDateString(
-				'en-US'
-			)},10:00 AM,true\n`),
-			leaders.forEach((leader) => {
-				console.log(`leader: ${leader[0]} used: ${leader.used}`);
-			});
-
-		download('out.csv', output);
+		helper(songleaders, [], 0, songleaders.length - 1, 0);
+		return result;
 	}
+
+	function shuffleSongleader(songleaderArray: any[]): any[] {
+		let currentIndex = songleaderArray.length,
+			temporaryValue,
+			randomIndex;
+
+		// While there remain elements to shuffle...
+		while (0 !== currentIndex) {
+			// Pick a remaining element...
+			randomIndex = Math.floor(Math.random() * currentIndex);
+			currentIndex -= 1;
+
+			// And swap it with the current element.
+			temporaryValue = songleaderArray[currentIndex];
+			songleaderArray[currentIndex] = songleaderArray[randomIndex];
+			songleaderArray[randomIndex] = temporaryValue;
+		}
+
+		return songleaderArray;
+	}
+
+	function newCSV(songleaders: string[], year: number, customText?: string) {
+		songleaders = shuffle(songleaders);
+
+		let songleaderCSV = 'Subject,Start Date,Start Time,All Day Event,Description\n';
+		let index = 0;
+		for (let week = 0; week < 52; week++) {
+			let date = new Date(year, 0, 1 + week * 7); // Start from the first day of the year
+			date.setDate(date.getDate() - date.getDay() + 7); // Get the first Sunday of the year
+			let formattedDate =
+				(date.getMonth() + 1).toString().padStart(2, '0') +
+				'/' +
+				date.getDate().toString().padStart(2, '0') +
+				'/' +
+				date.getFullYear();
+			let startTime = '10:00 AM';
+			if (index >= songleaders.length) {
+				songleaders = shuffle(songleaders);
+				index = 0;
+			}
+			let subject = `${songleaders[index][0]} and ${songleaders[index][1]}`;
+			if (week >= 50 && customText) {
+				subject += customText;
+			}
+			songleaderCSV += `${subject},${formattedDate},${startTime},False,"This entry was created by https://zachw.ca/songleader go there to generate calender entries for the following year"\n`;
+			index += 1;
+		}
+		return songleaderCSV;
+	}
+
+	let songleaders: any = ['Bob', 'Joe', 'Dan', 'Steve'];
+	let year = 2022;
+
+	let finalString = ': need more? https://zachw.ca/songleader';
 </script>
 
 <h1>Welcome</h1>
-<form use:enhance>
+<form>
 	<h3>Please Enter 4 Names to generate a calender file</h3>
-	<input type="text" name="name1" bind:value={name1} placeholder="Person" required />
-	<input type="text" name="name2" bind:value={name2} placeholder="Person" required />
-	<input type="text" name="name3" bind:value={name3} placeholder="Person" required />
-	<input type="text" name="name4" bind:value={name4} placeholder="Person" required />
+
+	<input type="text" name="name1" bind:value={songleaders[0]} placeholder="Person" required />
+	<input type="text" name="name2" bind:value={songleaders[1]} placeholder="Person" required />
+	<input type="text" name="name3" bind:value={songleaders[2]} placeholder="Person" required />
+	<input type="text" name="name4" bind:value={songleaders[3]} placeholder="Person" required />
+
+	<pre>{newCSV(
+			shuffleSongleader(getCombinationsOfSongleaders(songleaders)),
+			year,
+			finalString
+		)}</pre>
+	<button
+		on:click={() =>
+			download(
+				'songleader-csv.csv',
+				newCSV(shuffleSongleader(getCombinationsOfSongleaders(songleaders)), year, finalString)
+			)}>Download</button
+	>
+
 	<h3>Please Enter a Date starting sunday of the current year.</h3>
-	<input type="date" name="date" bind:value={date} required />
-	<h3>Please Select a Frequency (# of days )</h3>
-	<input type="number" name="frequency" bind:value={frequency} required />
-	<h3>Please enter a recurrence</h3>
-	<input type="number" name="recurrence" bind:value={recurrence} required />
-	<div><button on:click={() => newSave()} type="submit">Submit</button></div>
+	<input
+		type="number"
+		name="year"
+		bind:value={year}
+		min="2023"
+		max="9999999999"
+		step="1"
+		required
+	/>
 </form>
 
 <h1>Instructions</h1>
